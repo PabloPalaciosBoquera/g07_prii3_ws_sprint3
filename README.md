@@ -1,351 +1,148 @@
-# ROS 2 Turtlesim - Grupo 07
+# Sprint 3 — Navegación autónoma en F1L3 · Grupo 07
 
-Proyecto desarrollado por el **Grupo 07** para el **Sprint 1 de Proyectos III**.
+Entrega del **Sprint 3 de Proyectos III — Robótica Inteligente**, con SLAM, navegación mediante Nav2 y detección de ArUco.
 
-El proyecto implementa un paquete de ROS 2 que controla de forma autónoma una tortuga de `turtlesim` para dibujar el número **7**.
+## Paquetes del Sprint 3
 
-Además del movimiento autónomo, el nodo dispone de tres servicios ROS 2 que permiten:
+Dos paquetes en `src/`:
 
-- Detener el dibujo.
-- Reanudar el dibujo.
-- Reiniciar el dibujo.
+- `g07_prii3_nav_turtlebot`: simulación (TurtleBot3 Waffle en Gazebo Harmonic con el mundo F1L3).
+- `g07_prii3_nav_jetbot`: robot real (JetBot) y cámara cenital.
 
----
+Además, en la raíz del workspace:
 
-## 1. Entorno de desarrollo
+- `demo.sh`: atajo de simulación que presupone `~/g07_prii3_ws` y cierra procesos previos de Gazebo, RViz y componentes ROS. Para una ejecución independiente de esa ruta, utiliza los comandos `ros2 launch` de esta guía.
+- `wasd.py`: mueve el JetBot con las teclas W, A, S y D (útil para hacer el mapa).
 
-El proyecto ha sido desarrollado y probado utilizando:
+Probado con Ubuntu 24.04 y ROS 2 Jazzy.
 
-- Ubuntu 24.04
-- ROS 2 Jazzy
-- Python 3
-- `rclpy`
-- `geometry_msgs`
-- `std_srvs`
-- `turtlesim`
-
-> El enunciado original del Sprint 1 especifica Ubuntu 22.04 y ROS 2 Humble. Esta versión del proyecto ha sido desarrollada y verificada utilizando Ubuntu 24.04 y ROS 2 Jazzy.
-
----
-
-## 2. Estructura del workspace
-
-El workspace utilizado es:
-
-```text
-g07_prii3_ws
-```
-
-El paquete ROS 2 es:
-
-```text
-g07_prii3_turtlesim
-```
-
-La estructura principal del proyecto es:
-
-```text
-g07_prii3_ws/
-│
-├── src/
-│   └── g07_prii3_turtlesim/
-│       │
-│       ├── g07_prii3_turtlesim/
-│       │   ├── __init__.py
-│       │   └── dibujar_7.py
-│       │
-│       ├── launch/
-│       │   └── dibujar_7.launch.py
-│       │
-│       ├── resource/
-│       │   └── g07_prii3_turtlesim
-│       │
-│       ├── test/
-│       │
-│       ├── package.xml
-│       ├── setup.cfg
-│       └── setup.py
-│
-├── .gitignore
-└── README.md
-```
-
-Los directorios `build/`, `install/` y `log/` son generados automáticamente durante la compilación y no se almacenan en el repositorio.
-
----
-
-## 3. Funcionamiento
-
-El nodo principal se encuentra en:
-
-```text
-src/g07_prii3_turtlesim/g07_prii3_turtlesim/dibujar_7.py
-```
-
-El nodo controla el movimiento de `turtle1` de forma autónoma para dibujar el número **7**.
-
-La trayectoria predefinida es:
-
-```text
-(2,10)
-   ↓
-(10,10)
-   ↓
-(7,6)
-   ↓
-(5,6)
-   ↓
-(9,6)
-   ↓
-(7,6)
-   ↓
-(4,2)
-```
-
-Expresada de forma compacta:
-
-```text
-(2,10) → (10,10) → (7,6) → (5,6) → (9,6) → (7,6) → (4,2)
-```
-
-El movimiento se realiza mediante mensajes ROS 2 enviados a `turtlesim`.
-
-Una vez alcanzado el último punto, el nodo detiene la tortuga y finaliza el dibujo.
-
----
-
-## 4. Descargar el proyecto
-
-Clonar el repositorio:
+## 1. Descarga e instalación
 
 ```bash
 git clone https://github.com/PabloPalaciosBoquera/g07_prii3_ws.git
-```
-
-Acceder al workspace:
-
-```bash
 cd g07_prii3_ws
 ```
 
-> La URL anterior debe sustituirse por la URL definitiva de este repositorio de GitHub.
+Los bloques siguientes utilizan Bash. Si utilizas Zsh, ejecuta `bash` antes de cargar archivos `setup.bash`. Cada nueva terminal debe cargar ROS y el workspace.
 
----
-
-## 5. Compilar el proyecto
-
-### ROS 2 Jazzy con Bash
-
-Cargar el entorno de ROS 2:
 
 ```bash
+sudo apt install ros-jazzy-navigation2 ros-jazzy-nav2-bringup ros-jazzy-slam-toolbox \
+  ros-jazzy-turtlebot3-gazebo ros-jazzy-turtlebot3-navigation2 ros-jazzy-ros-gz \
+  ros-jazzy-cv-bridge ros-jazzy-nav2-simple-commander
 source /opt/ros/jazzy/setup.bash
-```
-
-Desde la raíz del workspace, compilar:
-
-```bash
+# Desde la raíz del workspace clonado:
 colcon build --symlink-install
-```
-
-Después de la compilación, cargar el workspace:
-
-```bash
 source install/setup.bash
 ```
 
-### ROS 2 Jazzy con Zsh
-
-Si se utiliza `zsh`:
+En el laboratorio, para que la simulación no se mezcle con los datos de otros grupos, en cada terminal (con el JetBot se usa el dominio del robot; ver el apartado 7):
 
 ```bash
-source /opt/ros/jazzy/setup.zsh
-colcon build --symlink-install
-source install/setup.zsh
+export ROS_DOMAIN_ID=77
+export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST   # solo en simulación
 ```
 
----
+El mundo `f1l3_gazebo` del profesor es para Gazebo Classic, que no existe en Jazzy. Está adaptado a Gazebo Harmonic en `g07_prii3_nav_turtlebot/worlds/f1l3.sdf`, con las mismas paredes. Los ArUco 5, 6 y 17 están en `models/` y usan el diccionario `DICT_4X4_100`. Las texturas del zip del profesor eran de `DICT_5X5_100` y no se detectaban con el diccionario de Eurobot 2027.
 
-## 6. Ejecutar el proyecto
+## 2. PBI 3.1: ArUco con la cámara cenital
 
-Con ROS 2 y el workspace cargados, ejecutar:
+Con la cámara conectada por USB:
 
 ```bash
-ros2 launch g07_prii3_turtlesim dibujar_7.launch.py
+ros2 launch g07_prii3_nav_jetbot aruco_cenital.launch.py
 ```
 
-El fichero `launch` inicia automáticamente:
-
-1. El nodo de `turtlesim`.
-2. El nodo `dibujar_7`.
-
-La tortuga se posicionará automáticamente y comenzará a dibujar el número 7.
-
----
-
-## 7. Servicios ROS 2
-
-El nodo implementa tres servicios utilizando:
-
-```text
-std_srvs/srv/Trigger
-```
-
-### Detener el dibujo
+En otra terminal:
 
 ```bash
-ros2 service call /detener_dibujo std_srvs/srv/Trigger "{}"
+ros2 topic echo /aruco_cenital
 ```
 
-Detiene temporalmente el movimiento de la tortuga.
+Cada línea es `id: 5, x: 320, y: 240`, con el centro del ArUco en píxeles. Si se mueve un ArUco, cambian sus coordenadas. Si se quita, desaparece su línea.
 
-### Reanudar el dibujo
+## 3. PBI 3.2: SLAM y navegación guiada con RViz
+
+**Simulación**
 
 ```bash
-ros2 service call /reanudar_dibujo std_srvs/srv/Trigger "{}"
+ros2 launch g07_prii3_nav_turtlebot slam.launch.py
 ```
 
-Continúa el dibujo desde el estado en el que se había detenido.
-
-### Reiniciar el dibujo
+En RViz, con **Nav2 Goal**, se manda al robot a puntos cercanos de la zona ya vista; el mapa crece mientras se recorre el pasillo y el laboratorio. El paquete ya incluye el mapa `maps/f1l3.yaml` hecho así. Para guardar uno nuevo:
 
 ```bash
-ros2 service call /reiniciar_dibujo std_srvs/srv/Trigger "{}"
-```
-
-Reinicia el proceso de dibujo del número 7.
-
-Los servicios disponibles también se pueden consultar mediante:
-
-```bash
-ros2 service list
-```
-
----
-
-## 8. Ejecutable ROS 2
-
-El ejecutable del paquete está registrado en `setup.py` como:
-
-```text
-dibujar_7
-```
-
-Por tanto, el nodo también puede ejecutarse directamente mediante:
-
-```bash
-ros2 run g07_prii3_turtlesim dibujar_7
-```
-
-Para el funcionamiento completo del proyecto se recomienda utilizar el fichero `launch`:
-
-```bash
-ros2 launch g07_prii3_turtlesim dibujar_7.launch.py
-```
-
----
-
-## 9. Comprobación del paquete
-
-Para comprobar que ROS 2 reconoce correctamente el paquete:
-
-```bash
-ros2 pkg list | grep g07_prii3_turtlesim
-```
-
-Para comprobar los ejecutables registrados:
-
-```bash
-ros2 pkg executables g07_prii3_turtlesim
-```
-
-Deberá aparecer:
-
-```text
-g07_prii3_turtlesim dibujar_7
-```
-
----
-
-## 10. Compilación desde cero
-
-Para realizar una compilación completamente limpia:
-
-```bash
-rm -rf build install log
-```
-
-Cargar ROS 2:
-
-```bash
-source /opt/ros/jazzy/setup.bash
-```
-
-Compilar:
-
-```bash
+ros2 run nav2_map_server map_saver_cli -f src/g07_prii3_nav_turtlebot/maps/f1l3
 colcon build --symlink-install
 ```
 
-Cargar el workspace:
+**JetBot**: primero, en el robot por SSH, `ros2 launch jetbot_pro_ros2 jetbot.py`. Después, en el PC:
 
 ```bash
-source install/setup.bash
+ros2 launch g07_prii3_nav_jetbot slam.launch.py
 ```
 
-Y ejecutar:
+El robot se guía con **Nav2 Goal** o con `python3 wasd.py`. No hace falta guardar este mapa: para navegar, el JetBot usa el mismo `maps/f1l3.yaml` que la simulación (apartado 6).
+
+## 4. PBI 3.3: navegación predefinida
 
 ```bash
-ros2 launch g07_prii3_turtlesim dibujar_7.launch.py
+ros2 launch g07_prii3_nav_turtlebot predefined_navigation.launch.py
+ros2 launch g07_prii3_nav_jetbot predefined_navigation.launch.py
 ```
 
----
+El robot sale de `POSE_INICIAL`, en el pasillo, y va a `POSE_FINAL`, dentro del laboratorio.
 
-## 11. Dependencias ROS 2
+## 5. PBI 3.4: navegación autónoma con ArUco
 
-Las principales dependencias declaradas en `package.xml` son:
-
-```text
-rclpy
-geometry_msgs
-std_srvs
-turtlesim
+```bash
+ros2 launch g07_prii3_nav_turtlebot autonomous_navigation.launch.py aruco:=5
+ros2 launch g07_prii3_nav_jetbot autonomous_navigation.launch.py
 ```
 
-El paquete utiliza el sistema de construcción:
+Secuencia: pasillo → puerta (`POSE_PUERTA`) → lee el ArUco con la cámara → va al destino de ese ArUco (`DESTINOS`). En simulación, `aruco:=5`, `6` o `17` elige qué ArUco aparece en la puerta.
 
-```text
-ament_python
-```
-
----
-
-## 12. Resumen del proyecto
-
-| Elemento | Nombre |
+| ArUco | Destino en el mapa (x, y) |
 |---|---|
-| Grupo | 07 |
-| Workspace | `g07_prii3_ws` |
-| Paquete | `g07_prii3_turtlesim` |
-| Nodo principal | `dibujar_7` |
-| Fichero Python | `dibujar_7.py` |
-| Launch | `dibujar_7.launch.py` |
-| Servicio detener | `/detener_dibujo` |
-| Servicio reanudar | `/reanudar_dibujo` |
-| Servicio reiniciar | `/reiniciar_dibujo` |
-| Build type | `ament_python` |
-| Licencia | Apache-2.0 |
+| 5 | (3,5; 7,1) |
+| 6 | (−2,0; 6,5) |
+| 17 | (0,5; 14,1) |
 
----
+## 6. Poses
 
-## 13. Licencia
+Las poses están en el frame `map` y se escriben al principio de cada nodo como `(x, y, ángulo)`, en metros y radianes.
 
-Este proyecto utiliza la licencia:
+**Simulación.** El origen del mapa es el punto donde aparece el robot en Gazebo, así que `POSE_INICIAL = (0.0, 0.0, 0.0)`.
 
-```text
-Apache-2.0
-```
+**JetBot.** El mundo F1L3 está a escala real, así que el JetBot usa el mismo mapa (`maps/f1l3.yaml`) y los mismos destinos que la simulación. La pose inicial es un punto del pasillo elegido por nosotros y marcado en el suelo: `POSE_INICIAL = (2.36, 0.21, -0.03)`. Se midió colocando el robot en la marca, ajustándolo en RViz con **2D Pose Estimate** y leyendo `/amcl_pose`. El robot siempre tiene que salir de esa marca y mirando hacia el mismo lado.
 
-## Sprint 3
+## 7. JetBot en el laboratorio
 
-Consulta [las instrucciones del Sprint 3](README_SPRINT3.md).
+1. **En el robot** (`ssh jetbot@IP_DEL_ROBOT`), con su `ROS_DOMAIN_ID` (el nuestro es 199): `ros2 launch jetbot_pro_ros2 jetbot.py`. La cámara arranca con ese mismo launch (bloque `gscam_node` activado) y publica en `/camera/image_raw`.
+2. **En el PC**, en cada terminal:
+
+   ```bash
+   export ROS_DOMAIN_ID=199
+   unset ROS_AUTOMATIC_DISCOVERY_RANGE
+   source /opt/ros/jazzy/setup.bash
+   # Desde la raíz de este workspace:
+   source install/setup.bash
+   ```
+
+3. Para hacer el mapa a mano: `python3 wasd.py`.
+
+Cambios en `config/nav2_jetbot.yaml` respecto a los parámetros del TurtleBot3 Burger:
+
+- `enable_stamped_cmd_vel: false`: el JetBot recibe `Twist`, no `TwistStamped`.
+- `robot_base_frame: base_footprint`: es el frame base del JetBot.
+- Monitor de colisiones con `source_timeout: 5.0` y `base_shift_correction: false`: el láser llega por wifi con más de 0,2 s de retraso y, con los valores originales, el monitor paraba el robot.
+
+## 8. Detección de ArUco y versión de OpenCV
+
+Ubuntu 24.04 trae OpenCV 4.6, que no tiene `ArucoDetector`. Los nodos usan `ArucoDetector` si existe (OpenCV 4.7 o posterior) y, si no, `cv2.aruco.detectMarkers` con `adaptiveThreshConstant = 20`. Sin ese ajuste, OpenCV 4.6 no detecta los ArUco de Gazebo, porque el borde blanco del marcador se ve gris.
+
+## Documentación de sprints anteriores
+
+- [Sprint 1 — Turtlesim y dibujo del 7](README_SPRINT1.md).
+
+La documentación principal de esta entrega corresponde al Sprint 3.
