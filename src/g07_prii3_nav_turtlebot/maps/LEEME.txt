@@ -1,0 +1,3 @@
+Aquí va el mapa del F1L3 simulado (f1l3.yaml y f1l3.pgm), hecho con slam.launch.py:
+  ros2 run nav2_map_server map_saver_cli -f src/g07_prii3_nav_turtlebot/maps/f1l3
+Después hay que volver a compilar (colcon build).

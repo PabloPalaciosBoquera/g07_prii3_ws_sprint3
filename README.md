@@ -345,3 +345,7 @@ Este proyecto utiliza la licencia:
 ```text
 Apache-2.0
 ```
+
+## Sprint 3
+
+Consulta [las instrucciones del Sprint 3](README_SPRINT3.md).
