@@ -19,8 +19,8 @@ Probado con Ubuntu 24.04 y ROS 2 Jazzy.
 ## 1. Descarga e instalación
 
 ```bash
-git clone https://github.com/PabloPalaciosBoquera/g07_prii3_ws.git
-cd g07_prii3_ws
+git clone https://github.com/PabloPalaciosBoquera/g07_prii3_ws_sprint3.git
+cd g07_prii3_ws_sprint3
 ```
 
 Los bloques siguientes utilizan Bash. Si utilizas Zsh, ejecuta `bash` antes de cargar archivos `setup.bash`. Cada nueva terminal debe cargar ROS y el workspace.
